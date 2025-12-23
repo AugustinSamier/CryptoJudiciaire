@@ -479,7 +479,7 @@ def main(args):
     
     // Attendre que le réseau soit chargé
     setTimeout(() => {{
-    // Ajouter un panneau pour afficher l'adresse sélectionnée
+        // Ajouter un panneau pour afficher l'adresse sélectionnée
         const addressPanel = document.createElement('div');
         addressPanel.style.position = 'fixed';
         addressPanel.style.bottom = '10px';
@@ -555,10 +555,12 @@ def main(args):
                 }}
             }}
         }});
+        
         // Ajouter les contrôles
         const controlPanel = document.createElement('div');
+        controlPanel.id = 'controlPanel';
         controlPanel.style.position = 'fixed';
-        controlPanel.style.top = '10px';
+        controlPanel.style.top = '80px';
         controlPanel.style.right = '10px';
         controlPanel.style.background = 'rgba(0,0,0,0.8)';
         controlPanel.style.padding = '20px';
@@ -569,7 +571,10 @@ def main(args):
         controlPanel.style.fontFamily = 'Arial, sans-serif';
         
         controlPanel.innerHTML = `
-            <h3 style="margin-top:0;">Contrôles d'Analyse</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0;">Contrôles d'Analyse</h3>
+                <button id="closeControlPanel" style="background:#ff4444; border:none; color:white; padding:5px 10px; border-radius:5px; cursor:pointer; font-weight: bold;">✕</button>
+            </div>
             
             <div style="margin-bottom: 15px;">
                 <label><b>Schéma de couleurs:</b></label><br>
@@ -607,7 +612,12 @@ def main(args):
         
         document.body.appendChild(controlPanel);
         
-        // Event listeners
+        // Event listeners pour le panneau de contrôle
+        document.getElementById('closeControlPanel').addEventListener('click', () => {{
+            document.getElementById('controlPanel').style.display = 'none';
+            document.getElementById('toggleControlPanel').style.display = 'block';
+        }});
+        
         document.getElementById('colorScheme').addEventListener('change', (e) => {{
             updateNodeColors(e.target.value);
         }});
@@ -629,6 +639,45 @@ def main(args):
             resetFilters();
             updateNodeColors('circles');
             updateEdgeLabels(false);
+        }});
+        
+        // Ajouter des boutons pour réouvrir les panneaux fermés
+        const toggleButtons = document.createElement('div');
+        toggleButtons.style.position = 'fixed';
+        toggleButtons.style.top = '10px';
+        toggleButtons.style.right = '10px';
+        toggleButtons.style.zIndex = '1001';
+        toggleButtons.style.display = 'flex';
+        toggleButtons.style.gap = '10px';
+        
+        toggleButtons.innerHTML = `
+            <button id="toggleControlPanel" style="background:#4CAF50; border:none; color:white; padding:10px 15px; border-radius:5px; cursor:pointer; font-weight:bold; display:none;">
+                Contrôles
+            </button>
+            <button id="toggleAddressPanel" style="background:#2196F3; border:none; color:white; padding:10px 15px; border-radius:5px; cursor:pointer; font-weight:bold; display:none;">
+                Adresse
+            </button>
+        `;
+        
+        document.body.appendChild(toggleButtons);
+        
+        // Toggle pour le panneau de contrôle
+        document.getElementById('toggleControlPanel').addEventListener('click', () => {{
+            document.getElementById('controlPanel').style.display = 'block';
+            document.getElementById('toggleControlPanel').style.display = 'none';
+        }});
+        
+        // Toggle pour le panneau d'adresse
+        document.getElementById('toggleAddressPanel').addEventListener('click', () => {{
+            const panel = document.getElementById('addressPanel');
+            panel.style.display = 'block';
+            document.getElementById('toggleAddressPanel').style.display = 'none';
+        }});
+        
+        // Modifier le comportement de fermeture du panneau d'adresse
+        document.getElementById('closeAddressPanel').addEventListener('click', () => {{
+            document.getElementById('addressPanel').style.display = 'none';
+            document.getElementById('toggleAddressPanel').style.display = 'block';
         }});
     }}, 1000);
     </script>
