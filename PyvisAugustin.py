@@ -88,7 +88,8 @@ def main(args):
         for i in range(len(allOutcomes[cercle])):
             addr = allOutcomes[cercle][i]
             node_short = addr[:15]
-            node_layer[node_short] = cercle
+            if node_short not in node_layer:
+                node_layer[node_short] = cercle
             
             print(f"  Traitement: {addr}")
             _, outcomes, transac = make_graph(None, addr, limit=args.limit, 
@@ -232,7 +233,7 @@ def main(args):
     print(f"\nGraphe construit - Nœuds: {len(added_nodes)}, Arêtes: {sum(len(v) for v in transac.values())}")
     
     # Sauvegarder le graphe
-    output_file = "pyvis_Augustin.html"
+    output_file = f"pyvis_Augustin{nb_cercles}.html"
     net.save_graph(output_file)
     print(f"Visualisation sauvegardée dans: {os.path.abspath(output_file)}")
     print(f"Ouvrez le fichier dans votre navigateur pour voir le graphe interactif!")
