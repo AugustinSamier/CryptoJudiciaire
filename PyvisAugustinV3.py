@@ -75,7 +75,6 @@ def calculate_risk_score(addr_short, transac, node_layer, predecessors, successo
     """Calcule un score de risque basé sur plusieurs métriques"""
     score = 0
     
-    # 1. Degree (nombre de connexions)
     in_degree = len(predecessors.get(addr_short, []))
     out_degree = len(successors.get(addr_short, []))
     
@@ -91,9 +90,7 @@ def calculate_risk_score(addr_short, transac, node_layer, predecessors, successo
     elif in_degree > 10:
         score += 2
     
-    # 2. Structuring (multiples petites transactions)
     for outcome in successors.get(addr_short, []):
-        # Trouver l'adresse complète
         for full_addr in transac:
             if full_addr[:15] == addr_short:
                 for full_outcome in transac[full_addr]:
@@ -104,12 +101,10 @@ def calculate_risk_score(addr_short, transac, node_layer, predecessors, successo
                         elif tx_count > 5:
                             score += 1
     
-    # 3. Layering (position dans la chaîne)
     layer = node_layer.get(addr_short, 0)
     if 2 <= layer <= 4:  # Couches intermédiaires = layering potentiel
         score += 1
     
-    # 4. Centralité (hub)
     total_connections = in_degree + out_degree
     if total_connections > 30:
         score += 2
@@ -121,15 +116,15 @@ def main(args):
     outcome = args.address
     nb_cercles = args.nbCercles
 
-    # Créer le graphe PyVis avec des paramètres optimisés
+    
     net = Network(height="900px", width="100%", bgcolor="#222222", 
                   font_color="white", select_menu=True, filter_menu=True)
     
-    # Configuration de la physique optimisée
+
     net.barnes_hut(gravity=-10000, central_gravity=0.3, spring_length=200, 
                    spring_strength=0.01, damping=0.09, overlap=0)
     
-    # Initialisation
+
     allAddresses = set([outcome])
     node_layer = {}
     node_layer[outcome] = 0
@@ -185,7 +180,6 @@ def main(args):
             if income_short not in predecessors[outcome_short]:
                 predecessors[outcome_short].append(income_short)
     
-    # Calculer les scores de risque
     risk_scores = {}
     for addr in allAddresses:
         addr_short = addr[:15]
@@ -193,7 +187,6 @@ def main(args):
             addr_short, transac, node_layer, predecessors, successors
         )
     
-    # Calculer les positions
     print("\n=== Computing layout ===")
     fixed_pos = {}
     
@@ -259,7 +252,6 @@ def main(args):
             angle = i * angle_step
             fixed_pos[node] = (math.cos(angle) * R, math.sin(angle) * R)
     
-    # Préparer les données pour les filtres
     graph_data = {
         'nodes': {},
         'edges': []
@@ -285,7 +277,6 @@ def main(args):
                 'pos': fixed_pos.get(income_short, (0, 0))
             }
             
-            # Couleur par défaut (cercles)
             color = COLOR_SCHEMES['circles'][layer % len(COLOR_SCHEMES['circles'])]
             
             node_opts = {
@@ -357,7 +348,6 @@ def main(args):
                 net.add_node(outcome_short, label=outcome_short, title=title_html, **node_opts)
                 added_nodes.add(outcome_short)
             
-            # Données de l'arête
             tx_data = transac[income][outcome]
             count = tx_data['count']
             total_amount = tx_data['total_amount']
@@ -381,15 +371,12 @@ def main(args):
     
     print(f"\nGraphe construit - Nœuds: {len(added_nodes)}, Arêtes: {len(graph_data['edges'])}")
     
-    # Sauvegarder le graphe de base
     output_file = f"Pyvis_AugustinV3_cercle{nb_cercles}.html"
     net.save_graph(output_file)
     
-    # Ajouter le panneau de contrôle interactif
     with open(output_file, 'r', encoding='utf-8') as f:
         html_content = f.read()
     
-    # Injecter le code JavaScript pour les filtres
     custom_js = f"""
     <script>
     const graphData = {json.dumps(graph_data)};
