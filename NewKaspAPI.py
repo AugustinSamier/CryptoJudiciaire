@@ -245,6 +245,7 @@ def main(initial_address,nb_cercles):
     for cercle in range(nb_cercles):
         print("cercle: ",cercle)
         futurList=[]
+        i=0
         for addr in addrList:
             if addr not in addrSeen:
                 ver_name=verify_name(addr)
@@ -256,8 +257,9 @@ def main(initial_address,nb_cercles):
                 print("expl: ",addr)
                 relations,futurList=explore_address(relations,addr,cercle,addrSeen,addrList,futurList)
                 addrSeen.append(addr)
-                print("Nb addr restantes :",len(addrList))
-                
+                i+=1
+                print("Nb addr restantes :",len(addrList)-i)
+            
         addrList=futurList
         print(len(addrList))
     
