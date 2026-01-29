@@ -12,35 +12,41 @@ def get_address_data(address):
     return requests.get(URLADDRESS+address+"/full-transactions").json()
 
 def verify_name(address):
-    # verify_name=requests.get(URLADDRESS+address+"/name").json()
-    return requests.get(URLADDRESS+address+"/name").json()
-    if "name" in verify_name.keys():
-        return True
-    else:
-        return False
+    global NAME_CACHE
+    if address in NAME_CACHE:
+        return NAME_CACHE[address]
+    
+    name=requests.get(URLADDRESS+address+"/name").json()
+    NAME_CACHE[address]=name
+    return name
 
-TRANSACTION_CACHE = {}
+TRANSACTION_CACHE={}
+NAME_CACHE={}
 
 def load_cache():
-    """Charge le cache de transactions depuis le fichier"""
-    global TRANSACTION_CACHE
+    global TRANSACTION_CACHE,NAME_CACHE
     if os.path.exists(CACHE_FILE):
         try:
             with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-                TRANSACTION_CACHE = json.load(f)
-            print(f"Cache chargé: {len(TRANSACTION_CACHE)} transactions")
+                data=json.load(f)
+                TRANSACTION_CACHE=data.get("transactions",{})
+                NAME_CACHE=data.get("names",{})
+            print(f"Cache chargé: {len(TRANSACTION_CACHE)} transactions, {len(NAME_CACHE)} names")
         except Exception as e:
             print(f"Erreur lors du chargement du cache: {e}")
-            TRANSACTION_CACHE = {}
+            TRANSACTION_CACHE={}
+            NAME_CACHE={}
     else:
         print("Aucun cache existant trouvé")
 
 def save_cache():
-    """Sauvegarde le cache de transactions dans le fichier"""
     try:
         with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(TRANSACTION_CACHE, f, indent=2)
-        print(f"Cache sauvegardé: {len(TRANSACTION_CACHE)} transactions")
+            json.dump({
+                "transactions":TRANSACTION_CACHE,
+                "names":NAME_CACHE
+                }, f, indent=2)
+        print(f"Cache sauvegardé: {len(TRANSACTION_CACHE)} transactions, {len(NAME_CACHE)} names")
     except Exception as e:
         print(f"Erreur lors de la sauvegarde du cache: {e}")
 
@@ -48,8 +54,14 @@ def get_transaction_cached(tx_hash):
     if tx_hash in TRANSACTION_CACHE:
         return TRANSACTION_CACHE[tx_hash]
     
-    response=requests.get(URLTRANSAC+tx_hash)
-    data=response.json()
+    try:
+        response=requests.get(URLTRANSAC+tx_hash)
+        data=response.json()
+    except:
+        print(tx_hash)
+        time.sleep(1)
+        response=requests.get(URLTRANSAC+tx_hash)
+        data=response.json()
     TRANSACTION_CACHE[tx_hash]=data
     return data
 
@@ -71,34 +83,33 @@ def get_input(input):
         if old_output["index"]==old_index:
             return old_output["script_public_key_address"]
         
-def get_inputs_ouputs(transac,nameList):
+def get_inputs_ouputs(transac):
     inputs=[]
     outputs=[]
 
     if transac["inputs"]:
         for input in transac["inputs"]:
             inp=get_input(input)
-            if inp not in nameList:
-                if "name" not in verify_name(inp).keys():
-                    inputs.append(inp)
-                else:
-                    nameList.append(inp)
-                    print(verify_name(inp))
+            ver_name=verify_name(inp)
+            if "name" not in ver_name.keys():
+                inputs.append(inp)
+            else:
+                print(ver_name)
 
     if transac["outputs"]:
         for output in transac["outputs"]:
             output_add=output["script_public_key_address"]
-            if "name" not in verify_name(output_add).keys():
+            ver_name=verify_name(output_add)
+            if "name" not in ver_name.keys():
                 outputs.append(output_add)
             else:
-                print(verify_name(output_add))
+                print(ver_name)
 
         outputs=[output for output in outputs if output not in inputs]
     
-    return inputs,outputs,nameList
+    return inputs,outputs
 
-def explore_address(relations,address,cercle,addrSeen,addrList,futurList,nameList):
-    time.sleep(0.1)
+def explore_address(relations,address,cercle,addrSeen,addrList,futurList):
     data_address=get_address_data(address)
     print("Nb de transactions: ",len(data_address))
 
@@ -115,7 +126,7 @@ def explore_address(relations,address,cercle,addrSeen,addrList,futurList,nameLis
 
     for i,transac in enumerate(data_address):
         print(f"Transaction : {i+1}/{len(data_address)}")
-        inputs,outputs,nameList=get_inputs_ouputs(transac,nameList)
+        inputs,outputs=get_inputs_ouputs(transac)
         for input in inputs:
             if input!=address:
                 relations[address]["nb_transacs_in"]+=1
@@ -140,9 +151,9 @@ def explore_address(relations,address,cercle,addrSeen,addrList,futurList,nameLis
                 futurList.append(output)
     print("Nb new address: ",compteurNewAddr)
 
-    return relations,futurList,nameList
+    return relations,futurList
     
-def create_vis(relations, initial_address):
+def create_vis(relations, initial_address,nb_cercles):
     net=Network(height="900px", width="100%", bgcolor="#222222", font_color="white", directed=True)
     net.barnes_hut(gravity=-10000,central_gravity=0.3,spring_length=250,spring_strength=0.01)
     colors=["#FF0000","#FFA500","#FFFF00","#800080","#00FF00","#00FFFF","#FF00FF"]
@@ -187,13 +198,13 @@ def create_vis(relations, initial_address):
 
                 net.add_edge(target,source,color=edge_color,value=count,title=f"{count} transactions",label=label)
 
-    net.show("crypto_circles.html", notebook=False)
+    net.show("crypto_circles.html",notebook=False)
+    net.save_graph(f"NewAPIGraph_cercle{nb_cercles}.html")
 
 def main(initial_address,nb_cercles):
     load_cache()
 
     relations={}
-    nameList=[]
     addrSeen=[]
     addrList=[initial_address]
 
@@ -201,17 +212,23 @@ def main(initial_address,nb_cercles):
         print("cercle: ",cercle)
         futurList=[]
         for addr in addrList:
-            if addr not in addrSeen and addr not in nameList:
+            if addr not in addrSeen:
+                ver_name=verify_name(addr)
+                if "name" in ver_name.keys():
+                    print("Adresse ignorée : ",ver_name)
+                    addrSeen.append(addr)
+                    continue
+
                 print("expl: ",addr)
-                relations,futurList,nameList=explore_address(relations,addr,cercle,addrSeen,addrList,futurList,nameList)
+                relations,futurList=explore_address(relations,addr,cercle,addrSeen,addrList,futurList)
                 addrSeen.append(addr)
-                save_cache()
+                
         addrList=futurList
         print(len(addrList))
     
     save_cache()
     
-    create_vis(relations,initial_address)
+    create_vis(relations,initial_address,nb_cercles)
 
 if __name__=="__main__":
     address="kaspa:qqssy8x2stwk6x7trmw56m8rwfkwul70rpqxrvv789mxqz73pdny2sprry82x"
