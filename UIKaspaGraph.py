@@ -163,31 +163,41 @@ def main(filename):
     # Toggle Button HTML + Script
     injection_html = """
     <!-- Custom Controls Injected by UIKaspaGraph.py -->
-    <div id="toggleContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end;">
+    
+    <!-- Top Right Controls: Toggle + Layer Buttons -->
+    <div id="rightControls" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
         <button id="toggleBtn" onclick="toggleEdgeLabels()" 
-                style="padding: 12px 24px; font-size: 18px; font-weight: bold; background-color: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.3s; margin-bottom: 15px;">
+                style="padding: 12px 24px; font-size: 16px; font-weight: bold; background-color: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.3s; width: 100%;">
             Afficher Montants
         </button>
         
-        <div id="legendContainer" style="background-color: rgba(30, 30, 30, 0.95); padding: 20px; border-radius: 12px; color: white; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); min-width: 200px;">
-            <h4 style="margin: 0 0 15px 0; border-bottom: 2px solid #555; padding-bottom: 8px; font-size: 18px; text-align: center; text-transform: uppercase; letter-spacing: 1px;">Légende</h4>
-            
-            <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                <span style="width: 24px; height: 24px; background-color: #0000FF; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #0000FF;"></span>
-                <span>Cible (Target)</span>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                <span style="width: 24px; height: 24px; background-color: #FFA500; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #FFA500;"></span>
-                <span>Cercle 1</span>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                <span style="width: 24px; height: 24px; background-color: #FFFF00; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #FFFF00;"></span>
-                <span>Cercle 2</span>
-            </div>
-            <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                <span style="width: 24px; height: 24px; background-color: #800080; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #800080;"></span>
-                <span>Cercle 3</span>
-            </div>
+        <div id="layerButtons" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end; width: 100%;">
+            <button onclick="filterLayers(1)" style="padding: 10px 15px; font-size: 14px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); width: 100%; text-align: center;">Afficher Cercles 0 à 1</button>
+            <button onclick="filterLayers(2)" style="padding: 10px 15px; font-size: 14px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); width: 100%; text-align: center;">Afficher Cercles 0 à 2</button>
+            <button onclick="filterLayers(3)" style="padding: 10px 15px; font-size: 14px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); width: 100%; text-align: center;">Afficher Cercles 0 à 3</button>
+            <button onclick="filterLayers(100)" style="padding: 10px 15px; font-size: 14px; background-color: #607D8B; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); width: 100%; text-align: center;">Tous</button>
+        </div>
+    </div>
+
+    <!-- Top Left Legend -->
+    <div id="legendContainer" style="position: fixed; top: 20px; left: 20px; z-index: 9999; background-color: rgba(30, 30, 30, 0.95); padding: 20px; border-radius: 12px; color: white; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); min-width: 200px;">
+        <h4 style="margin: 0 0 15px 0; border-bottom: 2px solid #555; padding-bottom: 8px; font-size: 18px; text-align: center; text-transform: uppercase; letter-spacing: 1px;">Légende</h4>
+        
+        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <span style="width: 24px; height: 24px; background-color: #0000FF; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #0000FF;"></span>
+            <span>Cible (Target)</span>
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <span style="width: 24px; height: 24px; background-color: #FFA500; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #FFA500;"></span>
+            <span>Cercle 1</span>
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <span style="width: 24px; height: 24px; background-color: #FFFF00; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #FFFF00;"></span>
+            <span>Cercle 2</span>
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+            <span style="width: 24px; height: 24px; background-color: #800080; display: inline-block; margin-right: 12px; border-radius: 4px; border: 1px solid #fff; box-shadow: 0 0 5px #800080;"></span>
+            <span>Cercle 3</span>
         </div>
     </div>
 
@@ -222,6 +232,51 @@ def main(filename):
                 btn.innerText = "Afficher Montants";
                 btn.style.backgroundColor = "#2196F3"; 
             }
+        }
+        
+        function filterLayers(maxLayer) {
+            // Mapping colors to layers based on user requirements
+            var colorToLayer = {
+                '#0000FF': 0, // Blue = Target
+                '#FFA500': 1, // Orange = C1
+                '#FFFF00': 2, // Yellow = C2
+                '#800080': 3, // Purple = C3
+                '#00FF00': 4, // Green
+                '#00FFFF': 5  // Cyan
+            };
+
+            var allNodes = nodes.get();
+            var updateNodeArray = [];
+            
+            allNodes.forEach(function(node) {
+                var c = (node.color && node.color.background) ? node.color.background.toUpperCase() : 
+                        (node.color ? String(node.color).toUpperCase() : "");
+                
+                // Handle case where color is object or string
+                // Sometimes VisJS nodes.color is a string, sometimes object {background: ..., border: ...}
+                // In the HTML generated by pyvis/vis, it's often a string at init, but let's be safe.
+                
+                var layer = 100; // Default: show for 'Tous' or unknown
+                
+                // Exact match from map
+                if (colorToLayer.hasOwnProperty(c)) {
+                    layer = colorToLayer[c];
+                }
+                
+                if (layer <= maxLayer) {
+                     updateNodeArray.push({id: node.id, hidden: false});
+                } else {
+                     updateNodeArray.push({id: node.id, hidden: true});
+                }
+            });
+            
+            nodes.update(updateNodeArray);
+            
+            // Also update edges? 
+            // VisJS usually hides edges connected to hidden nodes automatically if physics is enabled or not.
+            // But explicitly hiding edges might be cleaner if Vis doesn't do it fully.
+            // Actually, VisJS documentation says edges connected to hidden nodes are hidden.
+            // Let's trust VisJS first.
         }
     
         // Network Click Event for Popup (Original Logic Preserved)
