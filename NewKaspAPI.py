@@ -59,9 +59,15 @@ def get_transaction_cached(tx_hash):
         data=response.json()
     except:
         print(tx_hash)
-        time.sleep(1)
-        response=requests.get(URLTRANSAC+tx_hash)
-        data=response.json()
+        try:
+            time.sleep(1)
+            response=requests.get(URLTRANSAC+tx_hash)
+            data=response.json()
+        except:
+            print("Last chance")
+            time.sleep(2)
+            response=requests.get(URLTRANSAC+tx_hash)
+            data=response.json()
     TRANSACTION_CACHE[tx_hash]=data
     return data
 
@@ -166,6 +172,14 @@ def create_vis(relations, initial_address,nb_cercles):
             color=colors[relations[addr]["cercle"]]
             size=25
         
+        title_html=f"""
+        <div style='background-color: #333; padding: 10px; border-radius: 5px;'>
+            <b>Address:</b> {addr}<br>
+            <a href='https://explorer.kaspa.org/addresses/{addr}' target='_blank' style='color: #4CAF50;'>🔍 Voir sur Kaspa Explorer</a><br>
+            <button onclick="navigator.clipboard.writeText('{addr}'); alert('Adresse copiée!');" style='margin-top: 5px; cursor: pointer;'>📋 Copier l'adresse</button>
+        </div>
+        """
+
         net.add_node(addr,label=addr[:10],title=addr,color=color,size=size)
 
     for source, data in relations.items():
@@ -198,6 +212,26 @@ def create_vis(relations, initial_address,nb_cercles):
 
                 net.add_edge(target,source,color=edge_color,value=count,title=f"{count} transactions",label=label)
 
+    net.set_options("""
+    {
+        "interaction": {
+            "hover": true,
+            "navigationButtons": true,
+            "keyboard": true
+        },
+        "physics": {
+            "enabled": true,
+            "barnesHut": {
+                "gravitationalConstant": -10000,
+                "centralGravity": 0.3,
+                "springLength": 250,
+                "springConstant": 0.01
+            }
+        }
+    }
+    """)
+
+
     net.show("crypto_circles.html",notebook=False)
     net.save_graph(f"NewAPIGraph_cercle{nb_cercles}.html")
 
@@ -222,6 +256,7 @@ def main(initial_address,nb_cercles):
                 print("expl: ",addr)
                 relations,futurList=explore_address(relations,addr,cercle,addrSeen,addrList,futurList)
                 addrSeen.append(addr)
+                print("Nb addr restantes :",len(addrList))
                 
         addrList=futurList
         print(len(addrList))
@@ -232,4 +267,9 @@ def main(initial_address,nb_cercles):
 
 if __name__=="__main__":
     address="kaspa:qqssy8x2stwk6x7trmw56m8rwfkwul70rpqxrvv789mxqz73pdny2sprry82x"
-    main(address,3)
+    main(address,4)
+    """TODO:
+    -Adresse cliquable dans le graph
+    -Score de risque par adresse
+    -Echelles de couleurs
+    """
