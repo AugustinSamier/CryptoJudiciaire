@@ -222,10 +222,9 @@ def risk_score(addr_relations,nb_cercles):
         score+=10
         risks.append(f"Montants ronds suspects (sûrement automatiques) : {nb_round_amount} transactions rondes.")
     
-    total_amount=total_in+total_out
-    if total_amount>100000:
+    if total_in>100000 or total_out>100000:
         score+=10
-        risks.append(f"Total montant élevé ({total_amount:.0f} KAS -> {total_amount*0.02809:.2f} €).")
+        risks.append(f"Montants élevés (en entrée :{total_in:.0f} KAS -> {total_in*0.02809:.2f} € / en sortie :{total_out:.0f} KAS -> {total_out*0.02809:.2f} €).")
     
     score=min(score,100)
 
