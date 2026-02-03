@@ -81,7 +81,8 @@ def get_inputs_ouputs(transac):
     if transac["inputs"]:
         for input in transac["inputs"]:
             addr=input.get("previous_outpoint_address")
-            amount=input.get("previous_outpoint_amount",0)/100000000
+            amount=input.get("previous_outpoint_amount") or 0
+            amount=amount/100000000
             if addr:
                 inputs.append({"address":addr,"amount":amount})
 
@@ -174,7 +175,7 @@ def explore_address(relations,address,cercle,addrSeen,addrList,futurList,limit):
 
     return relations,futurList
 
-def risk_score(addr_relations):
+def risk_score(addr_relations,nb_cercles):
     score=0
     risks=[]
 
@@ -191,7 +192,7 @@ def risk_score(addr_relations):
             score+=20
             risks.append(f"Structuration suspectée (beaucoup de petites transactions) : avg: {average_amount_in:.2f} KAS, {nb_transacs_in} transacs.")
     
-    if total_in>0 and total_out>0:
+    if total_in>0 and total_out>0 and addr_relations["cercle"]!=nb_cercles-1:
         dispersion_ratio=total_out/total_in
         if dispersion_ratio>0.9 and nb_transacs_out>15:
             score+=15
@@ -199,7 +200,7 @@ def risk_score(addr_relations):
 
     if nb_sources>30 or nb_targets>30:
         score+=15
-        risks.append(f"Beaucoup de sources et cibles différentes ({nb_sources} sources, {nb_targets} cibles).")
+        risks.append(f"Beaucoup de relations ({nb_sources} sources, {nb_targets} cibles).")
     
     if total_in>10000 and nb_sources<5:
         score+=10
@@ -224,7 +225,7 @@ def risk_score(addr_relations):
     total_amount=total_in+total_out
     if total_amount>100000:
         score+=10
-        risks.append(f"Total montant élevé ({total_amount:.0f} KAS).")
+        risks.append(f"Total montant élevé ({total_amount:.0f} KAS -> {total_amount*0.02809:.2f} €).")
     
     score=min(score,100)
 
@@ -252,7 +253,7 @@ def create_vis(relations, initial_address,nb_cercles,limit):
     for addr in relations:
         data=relations[addr]
 
-        risk_dict[addr]=risk_score(data)
+        risk_dict[addr]=risk_score(data,nb_cercles)
         risk=risk_dict[addr]
         color_risk=risk["color"]
 
@@ -264,6 +265,7 @@ def create_vis(relations, initial_address,nb_cercles,limit):
             size=25
         
         titleNode = f'''Adresse : {addr}
+        Cercle : {data["cercle"]}
         SCORE DE RISQUE : {risk["score"]}/100 ({risk["level"]})
         Total Reçu : {data["amount_in"]:.2f} KAS ({data["nb_transacs_in"]} tx)
         Total Envoyé : {data["amount_out"]:.2f} KAS ({data["nb_transacs_out"]} tx)
@@ -329,7 +331,7 @@ def create_vis(relations, initial_address,nb_cercles,limit):
                 net.add_edge(source,target,id=edge_id,label=label_transacs,title=f"{label_transacs} / {label_amount}",value=nb,width=width_base,custom_count=nb,custom_amount=amount,label_tx=label_transacs,label_amount=label_amount,color=edge_color)
                 edge_id+=1
 
-    path=f"NEWKaspAPI_C{nb_cercles}LIMIT{limit}.html"
+    path=f"NEWKaspAPI_C{nb_cercles}LIMIT{limit}addr{initial_address[6:11]}.html"
     net.save_graph(path)
 
     risk_data_js=json.dumps({addr: risk_dict[addr] for addr in relations})
@@ -674,5 +676,7 @@ def main(initial_address,nb_cercles,limit):
     create_vis(relations,initial_address,nb_cercles,limit)
 
 if __name__=="__main__":
-    address="kaspa:qqssy8x2stwk6x7trmw56m8rwfkwul70rpqxrvv789mxqz73pdny2sprry82x"
+    # address="kaspa:qqssy8x2stwk6x7trmw56m8rwfkwul70rpqxrvv789mxqz73pdny2sprry82x"
+    address="kaspa:qp2sp0vvrwu4s8pw0j68muu2ta5qar5mehf8ehuvljw5zsrakk5cvx4gvqz7z"
+
     main(address,nb_cercles=4,limit=50)
